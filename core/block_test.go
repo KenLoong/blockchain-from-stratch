@@ -1,65 +1,48 @@
 package core
 
 import (
-	"bytes"
-	"fmt"
 	"testing"
 	"time"
+	"warson-blockchain/crypto"
 	"warson-blockchain/types"
 
 	"github.com/stretchr/testify/assert"
 )
 
-func TestHeaderEncodeAndDecode(t *testing.T) {
-	h := &Header{
-		Version:   1,
-		PreBlock:  types.RandomHash(),
-		Timestamp: uint64(time.Now().UnixNano()),
-		Height:    10,
-		Nonce:     983435,
+func RandomBlock(height uint32) *Block {
+	header := &Header{
+		Version:       1,
+		PrevBlockHash: types.RandomHash(),
+		Height:        height,
+		Timestamp:     uint64(time.Now().UnixNano()),
 	}
 
-	buf := &bytes.Buffer{}
-	assert.Nil(t, h.EncodeBinary(buf))
+	tx := Transaction{
+		Data: []byte("hhh"),
+	}
 
-	hDecode := &Header{}
-	assert.Nil(t, hDecode.DecodeBinary(buf))
-	assert.Equal(t, h, hDecode)
+	return NewBlock(header, []Transaction{tx})
 }
 
-func TestBlockEncodeAndDecode(t *testing.T) {
-	h := &Header{
-		Version:   1,
-		PreBlock:  types.RandomHash(),
-		Timestamp: uint64(time.Now().UnixNano()),
-		Height:    10,
-		Nonce:     983435,
-	}
-	b := &Block{
-		Header: *h,
-	}
+func TestSignBlock(t *testing.T) {
+	privateKey := crypto.GeneratePrivateKey()
+	b := RandomBlock(3)
 
-	buf := &bytes.Buffer{}
-	assert.Nil(t, b.EncodeBinary(buf))
-
-	bDecode := &Block{}
-	assert.Nil(t, bDecode.DecodeBinary(buf))
-	assert.Equal(t, b, bDecode)
+	assert.Nil(t, b.Sign(privateKey))
+	assert.NotNil(t, b.Signature)
 }
 
-func TestBlockHash(t *testing.T) {
+func TestVerifyBlock(t *testing.T) {
+	privateKey := crypto.GeneratePrivateKey()
+	b := RandomBlock(5)
 
-	h := &Header{
-		Version:   1,
-		PreBlock:  types.RandomHash(),
-		Timestamp: uint64(time.Now().UnixNano()),
-		Height:    10,
-		Nonce:     983435,
-	}
-	b := &Block{
-		Header: *h,
-	}
-	hash := b.Hash()
-	fmt.Println(hash)
-	assert.False(t, hash.IsZero())
+	assert.Nil(t, b.Sign(privateKey))
+	assert.Nil(t, b.Verify())
+	b.Height = 89797
+	assert.NotNil(t, b.Verify())
+
+	//otherPrivateKey := crypto.GeneratePrivateKey()
+	//b.Validator = otherPrivateKey.PublicKey()
+	//assert.NotNil(t, b.Verify())
+
 }

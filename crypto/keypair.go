@@ -5,6 +5,7 @@ import (
 	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/sha256"
+	"fmt"
 	"math/big"
 	"warson-blockchain/types"
 )
@@ -60,7 +61,6 @@ func (p PublicKey) Address() types.Address {
 	// 以太坊地址就是由公钥的哈希生成的一个 20 字节地址
 	// 公钥通常很长，而地址短小精悍，是公钥的“简化版”，便于作为账户或用户的唯一标识
 	// 地址隐藏了原始公钥的具体内容，提供了一定程度的隐私
-
 	return types.AddressFromBytes(h[len(h)-20:])
 }
 
@@ -69,5 +69,7 @@ type Signature struct {
 }
 
 func (s Signature) Verify(publicKey PublicKey, data []byte) bool {
+	//fmt.Printf("Data being verified: %+v\n", data)
+	fmt.Printf("Data length: %d and signature is %+v\n", len(data), s)
 	return ecdsa.Verify(publicKey.key, data, s.r, s.s)
 }
