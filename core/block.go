@@ -83,6 +83,6 @@ func (b *Block) HeaderData() []byte {
 	// 对编码后的数据进行哈希处理
 	hash := sha256.Sum256(buf.Bytes())
 
-	// 返回哈希值
+	// 返回哈希值，将固定长度的数组转换为一个动态的切片
 	return hash[:]
 }
