@@ -41,8 +41,8 @@ func TestVerifyBlock(t *testing.T) {
 	b.Height = 89797
 	assert.NotNil(t, b.Verify())
 
-	//otherPrivateKey := crypto.GeneratePrivateKey()
-	//b.Validator = otherPrivateKey.PublicKey()
-	//assert.NotNil(t, b.Verify())
+	otherPrivateKey := crypto.GeneratePrivateKey()
+	b.Validator = otherPrivateKey.PublicKey()
+	assert.NotNil(t, b.Verify())
 
 }
