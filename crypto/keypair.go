@@ -5,7 +5,6 @@ import (
 	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/sha256"
-	"fmt"
 	"math/big"
 	"warson-blockchain/types"
 )
@@ -69,7 +68,6 @@ type Signature struct {
 }
 
 func (s Signature) Verify(publicKey PublicKey, data []byte) bool {
-	//fmt.Printf("Data being verified: %+v\n", data)
-	fmt.Printf("Data length: %d and signature is %+v\n", len(data), s)
+	// fmt.Printf("Data length: %d and signature is %+v\n", len(data), s)
 	return ecdsa.Verify(publicKey.key, data, s.r, s.s)
 }
