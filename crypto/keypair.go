@@ -5,6 +5,8 @@ import (
 	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/sha256"
+	"crypto/x509"
+	"fmt"
 	"math/big"
 	"warson-blockchain/types"
 )
@@ -20,8 +22,8 @@ func (p PrivateKey) Sign(data []byte) (*Signature, error) {
 		return nil, err
 	}
 	return &Signature{
-		r: r,
-		s: s,
+		R: r,
+		S: s,
 	}, nil
 }
 
@@ -39,18 +41,46 @@ func GeneratePrivateKey() PrivateKey {
 
 func (p PrivateKey) PublicKey() PublicKey {
 	return PublicKey{
-		key: &p.key.PublicKey,
+		Key: &p.key.PublicKey,
 	}
 }
 
 type PublicKey struct {
-	key *ecdsa.PublicKey
+	Key *ecdsa.PublicKey
+}
+
+// 实现encoding/gob.GobEncoder接口和gob.GobDecoder，先将PublicKey 转换为字节数组
+// 避免gob直接序列化 ecdsa.PublicKey，出现"gob: type elliptic.p256Curve has no exported fields"的错误
+// PublicKey 序列化为字节
+func (pk *PublicKey) GobEncode() ([]byte, error) {
+	if pk.Key == nil {
+		return nil, fmt.Errorf("public key is nil")
+	}
+	pubKeyBytes, err := x509.MarshalPKIXPublicKey(pk.Key)
+	if err != nil {
+		return nil, err
+	}
+	return pubKeyBytes, nil
+}
+
+// PublicKey 反序列化
+func (pk *PublicKey) GobDecode(data []byte) error {
+	pubKey, err := x509.ParsePKIXPublicKey(data)
+	if err != nil {
+		return err
+	}
+	ecdsaPubKey, ok := pubKey.(*ecdsa.PublicKey)
+	if !ok {
+		return fmt.Errorf("not an ecdsa public key")
+	}
+	pk.Key = ecdsaPubKey
+	return nil
 }
 
 func (p PublicKey) ToSlice() []byte {
 	// 在椭圆曲线加密中，公钥 PublicKey 是一个点，表示为 (X, Y) 坐标对。
 	// 这些坐标是大整数（big.Int 类型），位于曲线 Curve
-	return elliptic.MarshalCompressed(p.key, p.key.X, p.key.Y)
+	return elliptic.MarshalCompressed(p.Key, p.Key.X, p.Key.Y)
 }
 
 func (p PublicKey) Address() types.Address {
@@ -64,10 +94,10 @@ func (p PublicKey) Address() types.Address {
 }
 
 type Signature struct {
-	r, s *big.Int
+	R, S *big.Int
 }
 
 func (s Signature) Verify(publicKey PublicKey, data []byte) bool {
 	// fmt.Printf("Data length: %d and signature is %+v\n", len(data), s)
-	return ecdsa.Verify(publicKey.key, data, s.r, s.s)
+	return ecdsa.Verify(publicKey.Key, data, s.R, s.S)
 }

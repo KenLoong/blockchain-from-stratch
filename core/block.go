@@ -5,7 +5,6 @@ import (
 	"crypto/sha256"
 	"encoding/gob"
 	"fmt"
-	"io"
 	"warson-blockchain/crypto"
 	"warson-blockchain/types"
 )
@@ -81,12 +80,12 @@ func (b *Block) Verify() error {
 	return nil
 }
 
-func (b *Block) Encode(r io.Writer, enc Encoder[*Block]) error {
-	return enc.Encode(r, b)
+func (b *Block) Encode(enc Encoder[*Block]) error {
+	return enc.Encode(b)
 }
 
-func (b *Block) Decode(w io.Reader, dec Decoder[*Block]) error {
-	return dec.Decode(w, b)
+func (b *Block) Decode(dec Decoder[*Block]) error {
+	return dec.Decode(b)
 }
 
 func (b *Block) Hash(hasher Hasher[*Header]) types.Hash {

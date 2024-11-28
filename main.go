@@ -20,7 +20,6 @@ func main() {
 	}()
 
 	opts := network.ServerOpts{
-		BlockTime:  3 * time.Second,
 		Transports: []network.Transport{trLocal},
 	}
 
