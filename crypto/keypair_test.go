@@ -1,9 +1,6 @@
 package crypto
 
 import (
-	"crypto/ecdsa"
-	"crypto/elliptic"
-	"crypto/rand"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -25,25 +22,17 @@ func TestSignVerify(t *testing.T) {
 }
 
 func TestPublicKeySerialization(t *testing.T) {
-	// 生成密钥对
-	privKey, _ := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
-	originalPubKey := &privKey.PublicKey
-	publicKeyWrapper := &PublicKey{Key: originalPubKey}
+	privateKey := GeneratePrivateKey()
+	publicKey := privateKey.PublicKey()
 
 	// 序列化
-	encodedData, err := publicKeyWrapper.GobEncode()
-	if err != nil {
-		t.Fatalf("Failed to encode public key: %v", err)
-	}
-
+	encodedData, err := publicKey.GobEncode()
+	assert.Nil(t, err)
 	// 反序列化
 	decodedPubKey := &PublicKey{}
-	if err := decodedPubKey.GobDecode(encodedData); err != nil {
-		t.Fatalf("Failed to decode public key: %v", err)
-	}
+	err = decodedPubKey.GobDecode(encodedData)
+	assert.Nil(t, err)
 
 	// 验证解码后是否与原始公钥一致
-	if !originalPubKey.Equal(decodedPubKey.Key) {
-		t.Fatalf("Decoded public key does not match the original")
-	}
+	assert.Equal(t, publicKey.Key, decodedPubKey.Key)
 }
