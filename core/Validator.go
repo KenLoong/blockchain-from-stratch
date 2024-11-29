@@ -7,10 +7,10 @@ type Validator interface {
 }
 
 type BlockValidator struct {
-	bc *BlockChain
+	bc *Blockchain
 }
 
-func NewBlockValidator(bc *BlockChain) *BlockValidator {
+func NewBlockValidator(bc *Blockchain) *BlockValidator {
 	return &BlockValidator{
 		bc: bc,
 	}

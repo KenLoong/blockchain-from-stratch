@@ -7,14 +7,14 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func newBlockchainWithGenesis(t *testing.T) *BlockChain {
-	bc, err := NewBlockChain(randomBlock(0, types.Hash{}))
+func newBlockchainWithGenesis(t *testing.T) *Blockchain {
+	bc, err := NewBlockChain(randomBlock(t, 0, types.Hash{}))
 	assert.Nil(t, err)
 
 	return bc
 }
 
-func getPrevBlockHash(t *testing.T, bc *BlockChain, height uint32) types.Hash {
+func getPrevBlockHash(t *testing.T, bc *Blockchain, height uint32) types.Hash {
 	prevHeader, err := bc.GetHeader(height - 1)
 	assert.Nil(t, err)
 	return BlockHasher{}.Hash(prevHeader)
@@ -31,17 +31,17 @@ func TestAddBlock(t *testing.T) {
 
 	lenBlocks := 200
 	for i := 0; i < lenBlocks; i++ {
-		block := randomBlockWithSignature(t, uint32(i+1), getPrevBlockHash(t, bc, uint32(i+1)))
+		block := randomBlock(t, uint32(i+1), getPrevBlockHash(t, bc, uint32(i+1)))
 		assert.Nil(t, bc.AddBlock(block))
 	}
 
 	assert.Equal(t, bc.Height(), uint32(lenBlocks))
 	assert.Equal(t, len(bc.headers), lenBlocks+1)
-	assert.NotNil(t, bc.AddBlock(randomBlock(33, types.Hash{})))
+	assert.NotNil(t, bc.AddBlock(randomBlock(t, 33, types.Hash{})))
 }
 func TestTooHeight(t *testing.T) {
 	bc := newBlockchainWithGenesis(t)
-	assert.NotNil(t, bc.AddBlock(randomBlockWithSignature(t, 4, types.Hash{})))
+	assert.NotNil(t, bc.AddBlock(randomBlock(t, 4, types.Hash{})))
 
 }
 
@@ -50,7 +50,7 @@ func TestGetHeader(t *testing.T) {
 
 	lenBlocks := 200
 	for i := 0; i < lenBlocks; i++ {
-		block := randomBlockWithSignature(t, uint32(i+1), getPrevBlockHash(t, bc, uint32(i+1)))
+		block := randomBlock(t, uint32(i+1), getPrevBlockHash(t, bc, uint32(i+1)))
 		assert.Nil(t, bc.AddBlock(block))
 		header, err := bc.GetHeader(block.Height)
 		assert.Nil(t, err)

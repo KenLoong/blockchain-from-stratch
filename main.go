@@ -28,11 +28,18 @@ func main() {
 		}
 	}()
 
+	privateKey := crypto.GeneratePrivateKey()
 	opts := network.ServerOpts{
+		PrivateKey: &privateKey,
+		ID:         "LOCAL",
 		Transports: []network.Transport{trLocal},
 	}
 
-	s := network.NewServer(opts)
+	s, err := network.NewServer(opts)
+	if err != nil {
+		logrus.Fatal(err)
+		return
+	}
 	s.Start()
 }
 
