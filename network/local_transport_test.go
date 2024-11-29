@@ -1,6 +1,7 @@
 package network
 
 import (
+	"io/ioutil"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -36,4 +37,26 @@ func TestSendMessage(t *testing.T) {
 	assert.Equal(t, msg, buf)
 	assert.Equal(t, rpc.From, ta.Addr())
 
+}
+
+func TestBroadcast(t *testing.T) {
+	ta := NewLocalTransport("A")
+	tb := NewLocalTransport("B")
+	tc := NewLocalTransport("C")
+
+	ta.Connect(tb)
+	ta.Connect(tc)
+
+	msg := []byte("hello")
+	assert.Nil(t, ta.Broadcast(msg))
+
+	rpcB := <-tb.Consume()
+	b, err := ioutil.ReadAll(rpcB.Payload)
+	assert.Nil(t, err)
+	assert.Equal(t, msg, b)
+
+	rpcC := <-tc.Consume()
+	b, err = ioutil.ReadAll(rpcC.Payload)
+	assert.Nil(t, err)
+	assert.Equal(t, msg, b)
 }
