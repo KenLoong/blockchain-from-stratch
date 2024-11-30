@@ -4,8 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"log"
-	"math/rand"
-	"strconv"
 	"time"
 	"warson-blockchain/core"
 	"warson-blockchain/crypto"
@@ -76,7 +74,8 @@ func makeServer(id string, tr network.Transport, pk *crypto.PrivateKey) *network
 
 func sendTransaction(tr network.Transport, to network.NetAddr) error {
 	privKey := crypto.GeneratePrivateKey()
-	data := []byte(strconv.FormatInt(int64(rand.Intn(1000000000)), 10))
+	// todo:直接输入特定指令
+	data := []byte{0x02, 0x0a, 0x02, 0x0a, 0x0b}
 	tx := core.NewTransaction(data)
 	tx.Sign(privKey)
 	buf := &bytes.Buffer{}
