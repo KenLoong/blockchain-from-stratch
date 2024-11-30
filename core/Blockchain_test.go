@@ -1,14 +1,18 @@
 package core
 
 import (
+	"os"
 	"testing"
 	"warson-blockchain/types"
+
+	"github.com/go-kit/log"
 
 	"github.com/stretchr/testify/assert"
 )
 
 func newBlockchainWithGenesis(t *testing.T) *Blockchain {
-	bc, err := NewBlockChain(randomBlock(t, 0, types.Hash{}))
+	logger := log.NewLogfmtLogger(os.Stderr)
+	bc, err := NewBlockChain(logger, randomBlock(t, 0, types.Hash{}))
 	assert.Nil(t, err)
 
 	return bc
