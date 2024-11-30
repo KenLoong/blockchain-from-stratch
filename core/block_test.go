@@ -1,6 +1,7 @@
 package core
 
 import (
+	"bytes"
 	"testing"
 	"time"
 	"warson-blockchain/crypto"
@@ -56,4 +57,15 @@ func TestHasBlock(t *testing.T) {
 	assert.True(t, bc.HasBlock(0))
 	assert.False(t, bc.HasBlock(10))
 
+}
+
+func TestEncodeAndDecodeBlock(t *testing.T) {
+
+	b := randomBlock(t, 1, types.Hash{})
+	buf := &bytes.Buffer{}
+	assert.Nil(t, b.Encode(NewGobBlockEncoder(buf)))
+
+	bDecode := new(Block)
+	assert.Nil(t, bDecode.Decode(NewGobBlockDecoder(buf)))
+	assert.Equal(t, b, bDecode)
 }

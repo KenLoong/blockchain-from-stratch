@@ -21,7 +21,7 @@ func (v *BlockValidator) ValidaBlock(b *Block) error {
 		return fmt.Errorf("chain already has block (%d) with hash (%s)", b.Height, b.Hash(BlockHasher{}))
 	}
 	if b.Height != v.bc.Height()+1 {
-		return fmt.Errorf("block (%s) to height", b.Hash(BlockHasher{}))
+		return fmt.Errorf("block (%s) with height (%d) is to height => current height (%d)", b.Hash(BlockHasher{}), b.Height, v.bc.Height())
 	}
 
 	preHeader, err := v.bc.GetHeader(b.Height - 1)
