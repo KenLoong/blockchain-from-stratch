@@ -127,8 +127,6 @@ func (s *Server) processTransaction(tx *core.Transaction) error {
 		return err
 	}
 
-	tx.SetFirstSeen(time.Now().UnixNano())
-
 	/*
 		s.Logger.Log(
 			"msg", "add new tx to mempool",

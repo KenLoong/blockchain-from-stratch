@@ -1,7 +1,6 @@
 package types
 
 import (
-	"crypto/rand"
 	"encoding/hex"
 	"fmt"
 )
@@ -41,15 +40,4 @@ func HashFromBytes(b []byte) Hash {
 	}
 
 	return Hash(value)
-}
-
-func RandomBytes(size int) []byte {
-	token := make([]byte, size)
-	//rand.Read 函数实际上是一个写操作。尽管它的名字是 Read，但它的功能是将随机数据写入到给定的字节切片中
-	rand.Read(token)
-	return token
-}
-
-func RandomHash() Hash {
-	return HashFromBytes(RandomBytes(32))
 }

@@ -1,7 +1,6 @@
 package core
 
 import (
-	"os"
 	"testing"
 	"warson-blockchain/types"
 
@@ -11,8 +10,7 @@ import (
 )
 
 func newBlockchainWithGenesis(t *testing.T) *Blockchain {
-	logger := log.NewLogfmtLogger(os.Stderr)
-	bc, err := NewBlockChain(logger, randomBlock(t, 0, types.Hash{}))
+	bc, err := NewBlockChain(log.NewNopLogger(), randomBlock(t, 0, types.Hash{}))
 	assert.Nil(t, err)
 
 	return bc

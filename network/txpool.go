@@ -23,6 +23,7 @@ func NewTxPool(maxLength int) *TxPool {
 }
 
 func (p *TxPool) Add(tx *core.Transaction) {
+	// todo:也许需要确认不重复才移除oldest？
 	// prune the oldest transaction that is sitting in the all pool
 	if p.all.Count() == p.maxLength {
 		oldest := p.all.First()
