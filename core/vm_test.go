@@ -34,3 +34,15 @@ func TestVM(t *testing.T) {
 	fmt.Printf("%v", vm.contractState)
 
 }
+
+func TestVMDiv(t *testing.T) {
+
+	contract := []byte{0x04, byte(InstrPushInt), 0x02, byte(InstrPushInt), byte(InstrDiv)}
+
+	contractState := NewState()
+	vm := NewVM(contract, contractState)
+	assert.Nil(t, vm.Run())
+
+	result := vm.stack.Pop().(int)
+	assert.Equal(t, 2, result)
+}

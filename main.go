@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"encoding/gob"
 	"fmt"
 	"log"
 	"time"
@@ -21,6 +22,7 @@ func main() {
 	trLocal.Connect(trRemoteA)
 	trRemoteA.Connect(trLocal)
 	trRemoteA.Connect(trRemoteB)
+	trRemoteB.Connect(trRemoteA)
 	trRemoteB.Connect(trRemoteC)
 
 	initRemoteServers([]network.Transport{trRemoteA, trRemoteB, trRemoteC})
@@ -33,6 +35,10 @@ func main() {
 			time.Sleep(2 * time.Second)
 		}
 	}()
+
+	if err := sendGetStatusMessage(trRemoteA, "REMOTE_B"); err != nil {
+		log.Fatal(err)
+	}
 
 	/*
 		go func() {
@@ -61,6 +67,7 @@ func initRemoteServers(trs []network.Transport) {
 
 func makeServer(id string, tr network.Transport, pk *crypto.PrivateKey) *network.Server {
 	opts := network.ServerOpts{
+		Transport:  tr, // todo:意义何在？
 		PrivateKey: pk,
 		ID:         id,
 		Transports: []network.Transport{tr},
@@ -77,9 +84,9 @@ func makeServer(id string, tr network.Transport, pk *crypto.PrivateKey) *network
 func sendTransaction(tr network.Transport, to network.NetAddr) error {
 	privKey := crypto.GeneratePrivateKey()
 	// todo:直接输入特定指令
-	// data := []byte{0x02, 0x0a, 0x02, 0x0a, 0x0b}
-	data := []byte{0x03, 0x0a, 0x46, 0x0c, 0x4f, 0x0c, 0x4f, 0x0c, 0x0d, 0x05, 0x0a, 0x0f}
-	tx := core.NewTransaction(data)
+	// contract := []byte{0x02, 0x0a, 0x02, 0x0a, 0x0b}
+	contract := []byte{0x03, 0x0a, 0x46, 0x0c, 0x4f, 0x0c, 0x4f, 0x0c, 0x0d, 0x05, 0x0a, 0x0f}
+	tx := core.NewTransaction(contract)
 	tx.Sign(privKey)
 	buf := &bytes.Buffer{}
 	if err := tx.Encode(core.NewGobTxEncoder(buf)); err != nil {
@@ -88,5 +95,17 @@ func sendTransaction(tr network.Transport, to network.NetAddr) error {
 
 	msg := network.NewMessage(network.MessageTypeTx, buf.Bytes())
 
+	return tr.SendMessage(to, msg.Bytes())
+}
+
+func sendGetStatusMessage(tr network.Transport, to network.NetAddr) error {
+	var (
+		getStatusMsg = new(network.GetStatusMessage)
+		buf          = new(bytes.Buffer)
+	)
+	if err := gob.NewEncoder(buf).Encode(getStatusMsg); err != nil {
+		return err
+	}
+	msg := network.NewMessage(network.MessageTypeGetStatus, buf.Bytes())
 	return tr.SendMessage(to, msg.Bytes())
 }

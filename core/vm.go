@@ -1,6 +1,8 @@
 package core
 
-import "encoding/binary"
+import (
+	"encoding/binary"
+)
 
 type Instruction byte
 
@@ -11,6 +13,9 @@ const (
 	InstrPack     Instruction = 0x0d
 	InstrSub      Instruction = 0x0e
 	InstrStore    Instruction = 0x0f
+	InstrGet      Instruction = 0x10 //17
+	InstrDiv      Instruction = 0x11
+	InstrMul      Instruction = 0x12
 )
 
 type Stack struct {
@@ -75,6 +80,14 @@ func (vm *VM) Run() error {
 
 func (vm *VM) Exec(instr Instruction) error {
 	switch instr {
+	case InstrGet:
+		key := vm.stack.Pop().([]byte)
+		value, err := vm.contractState.Get(key)
+		if err != nil {
+			return err
+		}
+
+		vm.stack.Push(value)
 	case InstrStore:
 		var (
 			key             = vm.stack.Pop().([]byte)
@@ -115,6 +128,19 @@ func (vm *VM) Exec(instr Instruction) error {
 		b := vm.stack.Pop().(int)
 		c := a + b
 		vm.stack.Push(c)
+
+	case InstrDiv:
+		a := vm.stack.Pop().(int)
+		b := vm.stack.Pop().(int)
+		c := a / b
+		vm.stack.Push(c)
+
+	case InstrMul:
+		a := vm.stack.Pop().(int)
+		b := vm.stack.Pop().(int)
+		c := a * b
+		vm.stack.Push(c)
+
 	}
 
 	return nil
