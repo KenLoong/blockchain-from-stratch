@@ -46,3 +46,15 @@ func TestVMDiv(t *testing.T) {
 	result := vm.stack.Pop().(int)
 	assert.Equal(t, 2, result)
 }
+
+func TestVMMul(t *testing.T) {
+
+	contract := []byte{0x04, byte(InstrPushInt), 0x02, byte(InstrPushInt), byte(InstrMul)}
+
+	contractState := NewState()
+	vm := NewVM(contract, contractState)
+	assert.Nil(t, vm.Run())
+
+	result := vm.stack.Pop().(int)
+	assert.Equal(t, 8, result)
+}
