@@ -34,15 +34,17 @@ func main() {
 		}
 	}()
 
-	go func() {
-		time.Sleep(7 * time.Second)
+	/*
+		go func() {
+			time.Sleep(7 * time.Second)
 
-		trLate := network.NewLocalTransport("LATE_REMOTE")
-		trRemoteC.Connect(trLate)
-		lateServer := makeServer(string(trLate.Addr()), trLate, nil)
+			trLate := network.NewLocalTransport("LATE_REMOTE")
+			trRemoteC.Connect(trLate)
+			lateServer := makeServer(string(trLate.Addr()), trLate, nil)
 
-		go lateServer.Start()
-	}()
+			go lateServer.Start()
+		}()
+	*/
 
 	privKey := crypto.GeneratePrivateKey()
 	localServer := makeServer("LOCAL", trLocal, &privKey)
@@ -75,7 +77,8 @@ func makeServer(id string, tr network.Transport, pk *crypto.PrivateKey) *network
 func sendTransaction(tr network.Transport, to network.NetAddr) error {
 	privKey := crypto.GeneratePrivateKey()
 	// todo:直接输入特定指令
-	data := []byte{0x02, 0x0a, 0x02, 0x0a, 0x0b}
+	// data := []byte{0x02, 0x0a, 0x02, 0x0a, 0x0b}
+	data := []byte{0x03, 0x0a, 0x46, 0x0c, 0x4f, 0x0c, 0x4f, 0x0c, 0x0d, 0x05, 0x0a, 0x0f}
 	tx := core.NewTransaction(data)
 	tx.Sign(privKey)
 	buf := &bytes.Buffer{}
