@@ -14,10 +14,10 @@ func main() {
 	localNode := makeServer("LOCAL_NODE", &privKey, ":3000", []string{":4000"})
 	go localNode.Start()
 
-	remoteNode := makeServer("REMOTE_NODE", nil, ":4000", []string{":5000"})
+	remoteNode := makeServer("REMOTE_NODE", nil, ":4000", []string{":4001"})
 	go remoteNode.Start()
 
-	remoteNodeB := makeServer("REMOTE_NODE_B", nil, ":5000", nil)
+	remoteNodeB := makeServer("REMOTE_NODE_B", nil, ":4001", nil)
 	go remoteNodeB.Start()
 
 	// time.Sleep(1 * time.Second)

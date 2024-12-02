@@ -14,14 +14,12 @@ type TCPPeer struct {
 
 func (p *TCPPeer) Send(b []byte) error {
 	_, err := p.conn.Write(b)
-	fmt.Printf("conn %s has been sent data\n", p.conn.LocalAddr())
 	return err
 }
 
 func (p *TCPPeer) readLoop(rpcCh chan RPC) {
 	buf := make([]byte, 2048)
 	for {
-		fmt.Printf("Conn try to read from rpcCh\n")
 		n, err := p.conn.Read(buf)
 		if err != nil {
 			fmt.Printf("read error: %s", err)
