@@ -5,6 +5,7 @@ import (
 	"encoding/gob"
 	"fmt"
 	"io"
+	"net"
 	"warson-blockchain/core"
 
 	"github.com/sirupsen/logrus"
@@ -21,7 +22,7 @@ const (
 )
 
 type RPC struct {
-	From    NetAddr
+	From    net.Addr //string
 	Payload io.Reader
 }
 
@@ -44,7 +45,7 @@ func (msg *Message) Bytes() []byte {
 }
 
 type DecodedMessage struct {
-	From NetAddr
+	From net.Addr
 	Data any
 }
 
@@ -55,6 +56,8 @@ func DefaultRPCDecodeFunc(rpc RPC) (*DecodedMessage, error) {
 	if err := gob.NewDecoder(rpc.Payload).Decode(&msg); err != nil {
 		return nil, fmt.Errorf("failed to decode message from %s: %s", rpc.From, err)
 	}
+
+	// fmt.Printf("receiving message: %+v\n", msg)
 
 	logrus.WithFields(logrus.Fields{
 		"from": rpc.From,
@@ -95,10 +98,12 @@ func DefaultRPCDecodeFunc(rpc RPC) (*DecodedMessage, error) {
 		if err := gob.NewDecoder(bytes.NewReader(msg.Data)).Decode(statusMessage); err != nil {
 			return nil, err
 		}
+
 		return &DecodedMessage{
 			From: rpc.From,
 			Data: statusMessage,
 		}, nil
+
 	default:
 		return nil, fmt.Errorf("invalid message header %x", msg.Header)
 	}

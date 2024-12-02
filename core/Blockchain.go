@@ -17,28 +17,17 @@ type Blockchain struct {
 	contractState *State
 }
 
-func NewBlockChain(logger log.Logger, genesis *Block) (*Blockchain, error) {
+func NewBlockchain(l log.Logger, genesis *Block) (*Blockchain, error) {
 	bc := &Blockchain{
+		contractState: NewState(),
 		headers:       []*Header{},
 		store:         NewMemoryStorage(),
-		logger:        logger,
-		contractState: NewState(),
+		logger:        l,
 	}
 	bc.validator = NewBlockValidator(bc)
 	err := bc.addBlockWithoutValidation(genesis)
+
 	return bc, err
-}
-
-func (bc *Blockchain) GetHeader(height uint32) (*Header, error) {
-	if height > bc.Height() {
-		return nil, fmt.Errorf("given height (%d) too high", height)
-	}
-
-	// todo: why use W lock?
-	bc.lock.Lock()
-	defer bc.lock.Unlock()
-
-	return bc.headers[height], nil
 }
 
 func (bc *Blockchain) SetValidator(v Validator) {
@@ -46,8 +35,7 @@ func (bc *Blockchain) SetValidator(v Validator) {
 }
 
 func (bc *Blockchain) AddBlock(b *Block) error {
-	err := bc.validator.ValidateBlock(b)
-	if err != nil {
+	if err := bc.validator.ValidateBlock(b); err != nil {
 		return err
 	}
 
@@ -59,17 +47,29 @@ func (bc *Blockchain) AddBlock(b *Block) error {
 			return err
 		}
 
-		bc.logger.Log("contract_state", vm.contractState)
-		fmt.Printf("STATE: %+v", vm.contractState)
+		fmt.Printf("state => %+v\n", bc.contractState.data)
 	}
 
 	return bc.addBlockWithoutValidation(b)
+}
+
+func (bc *Blockchain) GetHeader(height uint32) (*Header, error) {
+	if height > bc.Height() {
+		return nil, fmt.Errorf("given height (%d) too high", height)
+	}
+
+	bc.lock.Lock()
+	defer bc.lock.Unlock()
+
+	return bc.headers[height], nil
 }
 
 func (bc *Blockchain) HasBlock(height uint32) bool {
 	return height <= bc.Height()
 }
 
+// [0, 1, 2 ,3] => 4 len
+// [0, 1, 2 ,3] => 3 height
 func (bc *Blockchain) Height() uint32 {
 	bc.lock.RLock()
 	defer bc.lock.RUnlock()
@@ -89,6 +89,5 @@ func (bc *Blockchain) addBlockWithoutValidation(b *Block) error {
 		"transactions", len(b.Transactions),
 	)
 
-	bc.logger.Log()
 	return bc.store.Put(b)
 }
