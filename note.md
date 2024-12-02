@@ -1,3 +1,8 @@
+# EP8
+
+- gob: type elliptic.p256Curve has no exported fields"错误
+- 解决：为 PublicKey 结构体实现 GobEncode 和 GobDecode 接口，将密钥用我们的逻辑去序列化，避免 gob 直接序列化 ecdsa.PublicKey
+
 # EP18
 
 - server 的 Start 函数逻辑有问题，需要修改，应该监听 peers 的消息才对
