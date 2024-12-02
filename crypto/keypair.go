@@ -53,8 +53,9 @@ type PublicKey struct {
 // 避免gob直接序列化 ecdsa.PublicKey，出现"gob: type elliptic.p256Curve has no exported fields"的错误
 // PublicKey 序列化为字节
 func (pk *PublicKey) GobEncode() ([]byte, error) {
+	// todo:密钥为空，那说明不需要序列化密钥
 	if pk.Key == nil {
-		return nil, fmt.Errorf("public key is nil")
+		return nil, nil
 	}
 	pubKeyBytes, err := x509.MarshalPKIXPublicKey(pk.Key)
 	if err != nil {
@@ -65,6 +66,9 @@ func (pk *PublicKey) GobEncode() ([]byte, error) {
 
 // PublicKey 反序列化
 func (pk *PublicKey) GobDecode(data []byte) error {
+	if len(data) == 0 {
+		return nil
+	}
 	pubKey, err := x509.ParsePKIXPublicKey(data)
 	if err != nil {
 		return err

@@ -26,7 +26,6 @@ func (p *TCPPeer) readLoop(rpcCh chan RPC) {
 			continue
 		}
 
-		fmt.Printf("TCPeer Addr %s start send msg to rpc\n", p.ConnAddr)
 		msg := buf[:n]
 		rpcCh <- RPC{
 			From:    p.conn.RemoteAddr(),
@@ -61,22 +60,6 @@ func (t *TCPTransport) Start() error {
 	return nil
 }
 
-func (t *TCPTransport) readLoop(peer *TCPPeer) {
-	buf := make([]byte, 2048)
-	for {
-		n, err := peer.conn.Read(buf)
-		if err != nil {
-			fmt.Printf("read error: %s", err)
-			continue
-		}
-
-		msg := buf[:n]
-		fmt.Println(string(msg))
-		// handleMessage => server
-
-	}
-}
-
 func (t *TCPTransport) acceptLoop() {
 	for {
 		conn, err := t.listener.Accept()
@@ -93,7 +76,6 @@ func (t *TCPTransport) acceptLoop() {
 		// 注册自己的地址
 		t.peerCh <- peer
 
-		// todo:这个日志只打印了一次
 		fmt.Printf("new incoming TCP connection => %+v\n", conn)
 
 	}
