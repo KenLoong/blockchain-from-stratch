@@ -29,6 +29,7 @@ func (t *LocalTransport) Connect(tr Transport) error {
 	t.lock.Lock()
 	defer t.lock.Unlock()
 
+	// todo:这里记录
 	t.peers[tr.Addr()] = tr.(*LocalTransport)
 	return nil
 }
@@ -36,6 +37,10 @@ func (t *LocalTransport) Connect(tr Transport) error {
 func (t *LocalTransport) SendMessage(to NetAddr, payload []byte) error {
 	t.lock.Lock()
 	defer t.lock.Unlock()
+
+	if t.addr == to {
+		return nil
+	}
 
 	peer, ok := t.peers[to]
 	if !ok {

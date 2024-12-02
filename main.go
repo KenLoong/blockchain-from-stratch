@@ -1,44 +1,35 @@
 package main
 
 import (
-	"bytes"
-	"encoding/gob"
 	"fmt"
 	"log"
 	"time"
-	"warson-blockchain/core"
 	"warson-blockchain/crypto"
 	"warson-blockchain/network"
-
-	"github.com/sirupsen/logrus"
 )
 
+var transports = []network.Transport{
+	network.NewLocalTransport("LOCAL"),
+	// network.NewLocalTransport("REMOTE_B"),
+	// network.NewLocalTransport("REMOTE_C"),
+}
+
 func main() {
-	trLocal := network.NewLocalTransport("LOCAL")
-	trRemoteA := network.NewLocalTransport("REMOTE_A")
-	trRemoteB := network.NewLocalTransport("REMOTE_B")
-	trRemoteC := network.NewLocalTransport("REMOTE_C")
-
-	trLocal.Connect(trRemoteA)
-	trRemoteA.Connect(trLocal)
-	trRemoteA.Connect(trRemoteB)
-	trRemoteB.Connect(trRemoteA)
-	trRemoteB.Connect(trRemoteC)
-
-	initRemoteServers([]network.Transport{trRemoteA, trRemoteB, trRemoteC})
+	initRemoteServers(transports)
+	localNode := transports[0]
+	trLate := network.NewLocalTransport("LATE_NODE")
 
 	go func() {
-		for {
-			if err := sendTransaction(trRemoteA, trLocal.Addr()); err != nil {
-				logrus.Error(err)
-			}
-			time.Sleep(2 * time.Second)
-		}
+		time.Sleep(7 * time.Second)
+		lateServer := makeServer(string(trLate.Addr()), trLate, nil)
+		go lateServer.Start()
 	}()
 
-	if err := sendGetStatusMessage(trRemoteA, "REMOTE_B"); err != nil {
-		log.Fatal(err)
-	}
+	/*
+		if err := sendGetStatusMessage(trRemoteA, "REMOTE_B"); err != nil {
+			log.Fatal(err)
+		}
+	*/
 
 	/*
 		go func() {
@@ -53,7 +44,8 @@ func main() {
 	*/
 
 	privKey := crypto.GeneratePrivateKey()
-	localServer := makeServer("LOCAL", trLocal, &privKey)
+	// todo:在initRemoteServer时，已经localServer已经start过了，这里又start一次，会有问题！
+	localServer := makeServer("LOCAL", localNode, &privKey)
 	localServer.Start()
 }
 
@@ -67,10 +59,10 @@ func initRemoteServers(trs []network.Transport) {
 
 func makeServer(id string, tr network.Transport, pk *crypto.PrivateKey) *network.Server {
 	opts := network.ServerOpts{
-		Transport:  tr, // todo:意义何在？
+		Transport:  tr, // todo:意义何在?代表本server的地址?
 		PrivateKey: pk,
 		ID:         id,
-		Transports: []network.Transport{tr},
+		Transports: transports, // todo:这里是记录该server知道的其它server
 	}
 
 	s, err := network.NewServer(opts)
@@ -81,6 +73,7 @@ func makeServer(id string, tr network.Transport, pk *crypto.PrivateKey) *network
 	return s
 }
 
+/*
 func sendTransaction(tr network.Transport, to network.NetAddr) error {
 	privKey := crypto.GeneratePrivateKey()
 	// todo:直接输入特定指令
@@ -109,3 +102,5 @@ func sendGetStatusMessage(tr network.Transport, to network.NetAddr) error {
 	msg := network.NewMessage(network.MessageTypeGetStatus, buf.Bytes())
 	return tr.SendMessage(to, msg.Bytes())
 }
+
+*/

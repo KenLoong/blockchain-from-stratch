@@ -1,2 +1,0 @@
-go build -o ./bin/warson-project
-./bin/warson-project

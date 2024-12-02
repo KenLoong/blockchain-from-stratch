@@ -1,9 +1,14 @@
 package core
 
-import "fmt"
+import (
+	"errors"
+	"fmt"
+)
+
+var ErrBlockKnown = errors.New("block already known")
 
 type Validator interface {
-	ValidaBlock(*Block) error
+	ValidateBlock(*Block) error
 }
 
 type BlockValidator struct {
@@ -16,9 +21,9 @@ func NewBlockValidator(bc *Blockchain) *BlockValidator {
 	}
 }
 
-func (v *BlockValidator) ValidaBlock(b *Block) error {
+func (v *BlockValidator) ValidateBlock(b *Block) error {
 	if v.bc.HasBlock(b.Height) {
-		return fmt.Errorf("chain already has block (%d) with hash (%s)", b.Height, b.Hash(BlockHasher{}))
+		return ErrBlockKnown
 	}
 	if b.Height != v.bc.Height()+1 {
 		return fmt.Errorf("block (%s) with height (%d) is to height => current height (%d)", b.Hash(BlockHasher{}), b.Height, v.bc.Height())

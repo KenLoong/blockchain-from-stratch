@@ -45,7 +45,8 @@ func NewServer(opts ServerOpts) (*Server, error) {
 	}
 	if opts.Logger == nil {
 		opts.Logger = log.NewLogfmtLogger(os.Stderr)
-		opts.Logger = log.With(opts.Logger, "ID", opts.ID)
+		//	opts.Logger = log.With(opts.Logger, "ID", opts.ID)
+		opts.Logger = log.With(opts.Logger, "addr", opts.Transport.Addr())
 	}
 
 	chain, err := core.NewBlockChain(opts.Logger, genesisBlock())
@@ -72,6 +73,8 @@ func NewServer(opts ServerOpts) (*Server, error) {
 		go s.validatorLoop()
 	}
 
+	s.boostrapNodes()
+
 	return s, nil
 }
 
@@ -88,7 +91,9 @@ free:
 			}
 
 			if err := s.RPCProcessor.ProcessMessage(msg); err != nil {
-				s.Logger.Log("error", err)
+				if err != core.ErrBlockKnown {
+					s.Logger.Log("error", err)
+				}
 			}
 
 		case <-s.quitCh:
@@ -109,6 +114,8 @@ func (s *Server) ProcessMessage(msg *DecodedMessage) error {
 		return s.processGetStatusMessage(msg.From, t)
 	case *StatusMessage:
 		return s.processStatusMessage(msg.From, t)
+	case *GetBlocksMessage:
+		return s.processGetBlocksMessage(msg.From, t)
 	}
 	return nil
 }
@@ -124,7 +131,7 @@ func (s *Server) sendGetStatusMessage(tr Transport) error {
 		return err
 	}
 	msg := NewMessage(MessageTypeGetStatus, buf.Bytes())
-	if err := tr.SendMessage(tr.Addr(), msg.Bytes()); err != nil {
+	if err := s.Transport.SendMessage(tr.Addr(), msg.Bytes()); err != nil {
 		return err
 	}
 
@@ -221,6 +228,8 @@ func (s *Server) createNewBlock() error {
 }
 
 func (s *Server) initTransports() {
+	// 这里为什么要监听transports呢？应该监听s.Transport.peers的才对
+	// todo:需要修改
 	for _, tr := range s.Transports {
 		go func(tr Transport) {
 			for rpc := range tr.Consume() {
@@ -263,9 +272,24 @@ func (s *Server) processBlock(b *core.Block) error {
 }
 
 func (s *Server) processStatusMessage(from NetAddr, data *StatusMessage) error {
-	fmt.Printf("=> received GetStatus response msg from %s => %+v\n", from, data)
-	return nil
+	if data.CurrentHeight <= s.chain.Height() {
+		s.Logger.Log("msg", "cannot sync blockHeight to low", "ourHeight", s.chain.Height(), "theirHeight", data.CurrentHeight, "addr", from)
+		return nil
+	}
+
+	// In this case we are 100% sure that the node has blocks heigher than us.
+	getBlocksMessage := &GetBlocksMessage{
+		From: s.chain.Height(),
+		To:   0,
+	}
+	buf := new(bytes.Buffer)
+	if err := gob.NewEncoder(buf).Encode(getBlocksMessage); err != nil {
+		return err
+	}
+	msg := NewMessage(MessageTypeGetBlocks, buf.Bytes())
+	return s.Transport.SendMessage(from, msg.Bytes())
 }
+
 func (s *Server) processGetStatusMessage(from NetAddr, data *GetStatusMessage) error {
 	fmt.Printf("=> received Getstatus msg from %s => %+v\n", from, data)
 	statusMessage := &StatusMessage{
@@ -278,4 +302,26 @@ func (s *Server) processGetStatusMessage(from NetAddr, data *GetStatusMessage) e
 	}
 	msg := NewMessage(MessageTypeStatus, buf.Bytes())
 	return s.Transport.SendMessage(from, msg.Bytes())
+}
+
+// todo:这个函数很有问题，err不为空的情况下，应该停止接下来的动作才对
+func (s *Server) boostrapNodes() {
+	for _, tr := range s.Transports {
+		if s.Transport.Addr() != tr.Addr() {
+			if err := s.Transport.Connect(tr); err != nil {
+				s.Logger.Log("error", "could not connect to remote", "err", err)
+			}
+			s.Logger.Log("msg", "connect to remote", "we", s.Transport.Addr(), "addr", tr.Addr())
+			// Send the getStatusMessage so we can sync (if needed)
+			if err := s.sendGetStatusMessage(tr); err != nil {
+				s.Logger.Log("error", "sendGetStatusMessage", "err", err)
+			}
+		}
+	}
+}
+
+func (s *Server) processGetBlocksMessage(from NetAddr, data *GetBlocksMessage) error {
+	panic("here")
+	fmt.Printf("got get blocks message => %+v\n", data)
+	return nil
 }
