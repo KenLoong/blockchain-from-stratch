@@ -49,10 +49,10 @@ func randomTxWithSignature(t *testing.T) *Transaction {
 func TestTxEncodeDecode(t *testing.T) {
 	tx := randomTxWithSignature(t)
 	buf := &bytes.Buffer{}
-	assert.Nil(t, tx.Encode(NewGobTxEncoder(buf)))
+	assert.Nil(t, tx.Encode(NewJSONTxEncoder(buf)))
 
 	txDecoded := new(Transaction)
-	assert.Nil(t, txDecoded.Decode(NewGobTxDecoder(buf)))
+	assert.Nil(t, txDecoded.Decode(NewJSONTxDecoder(buf)))
 	assert.Equal(t, tx, txDecoded)
 
 }

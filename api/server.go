@@ -1,8 +1,8 @@
 package api
 
 import (
-	"encoding/gob"
 	"encoding/hex"
+	"encoding/json"
 	"net/http"
 	"strconv"
 	"warson-blockchain/core"
@@ -13,25 +13,24 @@ import (
 )
 
 type TxResponse struct {
-	TxCount uint
-	Hashes  []string
+	TxCount uint     `json:"tx_count"`
+	Hashes  []string `json:"hashes"`
 }
 
 type APIError struct {
-	Error string
+	Error string `json:"error"`
 }
 
 type Block struct {
-	Hash          string
-	Version       uint32
-	DataHash      string
-	PrevBlockHash string
-	Height        uint32
-	Timestamp     int64
-	Validator     string
-	Signature     string
-
-	TxResponse TxResponse
+	Hash          string     `json:"hash"`
+	Version       uint32     `json:"version"`
+	DataHash      string     `json:"data_hash"`
+	PrevBlockHash string     `json:"prev_block_hash"`
+	Height        uint32     `json:"height"`
+	Timestamp     int64      `json:"timestamp"`
+	Validator     string     `json:"validator"`
+	Signature     string     `json:"signature"`
+	TxResponse    TxResponse `json:"tx_response"`
 }
 
 type ServerConfig struct {
@@ -83,8 +82,7 @@ func (s *Server) handleGetBlock(c echo.Context) error {
 	hashOrID := c.Param("hashorid")
 
 	height, err := strconv.Atoi(hashOrID)
-	// If the error is nil we can assume the height of the block is given.
-	if err == nil {
+	if err == nil { // Treat input as block height
 		block, err := s.bc.GetBlock(uint32(height))
 		if err != nil {
 			return c.JSON(http.StatusBadRequest, APIError{Error: err.Error()})
@@ -93,8 +91,7 @@ func (s *Server) handleGetBlock(c echo.Context) error {
 		return c.JSON(http.StatusOK, intoJSONBlock(block))
 	}
 
-	// otherwise assume its the hash
-
+	// Otherwise, treat input as block hash
 	b, err := hex.DecodeString(hashOrID)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, APIError{Error: err.Error()})
@@ -133,9 +130,12 @@ func intoJSONBlock(block *core.Block) Block {
 
 func (s *Server) handlePostTx(c echo.Context) error {
 	tx := &core.Transaction{}
-	if err := gob.NewDecoder(c.Request().Body).Decode(tx); err != nil {
+
+	// Use JSON decoder instead of gob
+	if err := json.NewDecoder(c.Request().Body).Decode(tx); err != nil {
 		return c.JSON(http.StatusBadRequest, APIError{Error: err.Error()})
 	}
+
 	s.txChan <- tx
-	return nil
+	return c.JSON(http.StatusOK, map[string]string{"status": "transaction accepted"})
 }

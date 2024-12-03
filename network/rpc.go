@@ -2,7 +2,7 @@ package network
 
 import (
 	"bytes"
-	"encoding/gob"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net"
@@ -23,7 +23,7 @@ const (
 )
 
 type RPC struct {
-	From    net.Addr //string
+	From    net.Addr
 	Payload io.Reader
 }
 
@@ -41,7 +41,9 @@ func NewMessage(t MessageType, data []byte) *Message {
 
 func (msg *Message) Bytes() []byte {
 	buf := &bytes.Buffer{}
-	gob.NewEncoder(buf).Encode(msg)
+	if err := json.NewEncoder(buf).Encode(msg); err != nil {
+		panic(fmt.Sprintf("Failed to encode message: %v", err))
+	}
 	return buf.Bytes()
 }
 
@@ -54,11 +56,9 @@ type RPCDecodeFunc func(RPC) (*DecodedMessage, error)
 
 func DefaultRPCDecodeFunc(rpc RPC) (*DecodedMessage, error) {
 	msg := Message{}
-	if err := gob.NewDecoder(rpc.Payload).Decode(&msg); err != nil {
+	if err := json.NewDecoder(rpc.Payload).Decode(&msg); err != nil {
 		return nil, fmt.Errorf("failed to decode message from %s: %s", rpc.From, err)
 	}
-
-	// fmt.Printf("receiving message: %+v\n", msg)
 
 	logrus.WithFields(logrus.Fields{
 		"from": rpc.From,
@@ -68,7 +68,7 @@ func DefaultRPCDecodeFunc(rpc RPC) (*DecodedMessage, error) {
 	switch msg.Header {
 	case MessageTypeTx:
 		tx := new(core.Transaction)
-		if err := tx.Decode(core.NewGobTxDecoder(bytes.NewReader(msg.Data))); err != nil {
+		if err := tx.Decode(core.NewJSONTxDecoder(bytes.NewReader(msg.Data))); err != nil {
 			return nil, err
 		}
 
@@ -79,7 +79,7 @@ func DefaultRPCDecodeFunc(rpc RPC) (*DecodedMessage, error) {
 
 	case MessageTypeBlock:
 		block := new(core.Block)
-		if err := block.Decode(core.NewGobBlockDecoder(bytes.NewReader(msg.Data))); err != nil {
+		if err := block.Decode(core.NewJSONBlockDecoder(bytes.NewReader(msg.Data))); err != nil {
 			return nil, err
 		}
 
@@ -96,7 +96,7 @@ func DefaultRPCDecodeFunc(rpc RPC) (*DecodedMessage, error) {
 
 	case MessageTypeStatus:
 		statusMessage := new(StatusMessage)
-		if err := gob.NewDecoder(bytes.NewReader(msg.Data)).Decode(statusMessage); err != nil {
+		if err := json.NewDecoder(bytes.NewReader(msg.Data)).Decode(statusMessage); err != nil {
 			return nil, err
 		}
 
@@ -107,7 +107,7 @@ func DefaultRPCDecodeFunc(rpc RPC) (*DecodedMessage, error) {
 
 	case MessageTypeGetBlocks:
 		getBlocks := new(GetBlocksMessage)
-		if err := gob.NewDecoder(bytes.NewReader(msg.Data)).Decode(getBlocks); err != nil {
+		if err := json.NewDecoder(bytes.NewReader(msg.Data)).Decode(getBlocks); err != nil {
 			return nil, err
 		}
 		return &DecodedMessage{
@@ -117,7 +117,7 @@ func DefaultRPCDecodeFunc(rpc RPC) (*DecodedMessage, error) {
 
 	case MessageTypeBlocks:
 		blocks := new(BlocksMessage)
-		if err := gob.NewDecoder(bytes.NewReader(msg.Data)).Decode(blocks); err != nil {
+		if err := json.NewDecoder(bytes.NewReader(msg.Data)).Decode(blocks); err != nil {
 			return nil, err
 		}
 		return &DecodedMessage{

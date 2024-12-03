@@ -70,7 +70,7 @@ func txSender() {
 	tx.Sign(privKey)
 
 	buf := &bytes.Buffer{}
-	if err := tx.Encode(core.NewGobTxEncoder(buf)); err != nil {
+	if err := tx.Encode(core.NewJSONTxEncoder(buf)); err != nil {
 		panic(err)
 	}
 

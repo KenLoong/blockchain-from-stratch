@@ -63,9 +63,9 @@ func TestEncodeAndDecodeBlock(t *testing.T) {
 
 	b := randomBlock(t, 1, types.Hash{})
 	buf := &bytes.Buffer{}
-	assert.Nil(t, b.Encode(NewGobBlockEncoder(buf)))
+	assert.Nil(t, b.Encode(NewJSONBlockEncoder(buf)))
 
 	bDecode := new(Block)
-	assert.Nil(t, bDecode.Decode(NewGobBlockDecoder(buf)))
+	assert.Nil(t, bDecode.Decode(NewJSONBlockDecoder(buf)))
 	assert.Equal(t, b, bDecode)
 }

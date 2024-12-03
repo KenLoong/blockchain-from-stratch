@@ -3,7 +3,7 @@ package core
 import (
 	"bytes"
 	"crypto/sha256"
-	"encoding/gob"
+	"encoding/json"
 	"fmt"
 	"time"
 	"warson-blockchain/crypto"
@@ -11,34 +11,36 @@ import (
 )
 
 type Header struct {
-	Version       uint32
-	DataHash      types.Hash
-	PrevBlockHash types.Hash
-	Timestamp     int64
-	Height        uint32
+	Version       uint32     `json:"version"`
+	DataHash      types.Hash `json:"data_hash"`
+	PrevBlockHash types.Hash `json:"prev_block_hash"`
+	Timestamp     int64      `json:"timestamp"`
+	Height        uint32     `json:"height"`
 }
 
 func (h *Header) Bytes() []byte {
 	buf := &bytes.Buffer{}
-	enc := gob.NewEncoder(buf)
+	// Use JSON encoder instead of gob
+	enc := json.NewEncoder(buf)
 	if err := enc.Encode(h); err != nil {
 		panic(fmt.Sprintf("Failed to encode header: %v", err))
 	}
-	// 对编码后的数据进行哈希处理
+	// Hash the encoded data
 	hash := sha256.Sum256(buf.Bytes())
 
-	// 返回哈希值，将固定长度的数组转换为一个动态的切片
+	// Return the hash as a slice
 	return hash[:]
-	//return buf.Bytes()
+	// Alternatively, if hash is not needed, use:
+	// return buf.Bytes()
 }
 
 type Block struct {
 	*Header
-	Transactions []*Transaction
-	Validator    crypto.PublicKey
-	Signature    *crypto.Signature
+	Transactions []*Transaction    `json:"transactions"`
+	Validator    crypto.PublicKey  `json:"validator"`
+	Signature    *crypto.Signature `json:"signature"`
 
-	// cached version of header hash
+	// Cached version of header hash
 	hash types.Hash
 }
 
@@ -60,7 +62,6 @@ func (b *Block) Sign(privateKey crypto.PrivateKey) error {
 	}
 	b.Validator = privateKey.PublicKey()
 	b.Signature = sig
-
 	return nil
 }
 
@@ -102,16 +103,18 @@ func (b *Block) Verify() error {
 	}
 
 	if dataHash != b.DataHash {
-		return fmt.Errorf("block (%s) has en invalid data hash", b.Hash(BlockHasher{}))
+		return fmt.Errorf("block (%s) has an invalid data hash", b.Hash(BlockHasher{}))
 	}
 	return nil
 }
 
 func (b *Block) Encode(enc Encoder[*Block]) error {
+	// If Encoder still needs to work, ensure JSON is used internally
 	return enc.Encode(b)
 }
 
 func (b *Block) Decode(dec Decoder[*Block]) error {
+	// If Decoder still needs to work, ensure JSON is used internally
 	return dec.Decode(b)
 }
 
@@ -126,7 +129,8 @@ func CalculateDataHash(txx []*Transaction) (hash types.Hash, err error) {
 	buf := &bytes.Buffer{}
 
 	for _, tx := range txx {
-		if err = tx.Encode(NewGobTxEncoder(buf)); err != nil {
+		// Use JSON encoder instead of gob
+		if err = json.NewEncoder(buf).Encode(tx); err != nil {
 			return
 		}
 	}

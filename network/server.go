@@ -2,7 +2,7 @@ package network
 
 import (
 	"bytes"
-	"encoding/gob"
+	"encoding/json"
 	"fmt"
 	"net"
 	"os"
@@ -257,7 +257,7 @@ func (s *Server) processTransaction(tx *core.Transaction) error {
 
 func (s *Server) broadcastBlock(b *core.Block) error {
 	buf := &bytes.Buffer{}
-	if err := b.Encode(core.NewGobBlockEncoder(buf)); err != nil {
+	if err := b.Encode(core.NewJSONBlockEncoder(buf)); err != nil {
 		return err
 	}
 
@@ -268,7 +268,7 @@ func (s *Server) broadcastBlock(b *core.Block) error {
 
 func (s *Server) broadcastTx(tx *core.Transaction) error {
 	buf := &bytes.Buffer{}
-	if err := tx.Encode(core.NewGobTxEncoder(buf)); err != nil {
+	if err := tx.Encode(core.NewJSONTxEncoder(buf)); err != nil {
 		return err
 	}
 
@@ -349,7 +349,7 @@ func (s *Server) processGetBlocksMessage(from net.Addr, data *GetBlocksMessage) 
 	}
 
 	buf := new(bytes.Buffer)
-	if err := gob.NewEncoder(buf).Encode(blocksMsg); err != nil {
+	if err := json.NewEncoder(buf).Encode(blocksMsg); err != nil {
 		return err
 	}
 
@@ -370,7 +370,7 @@ func (s *Server) sendGetStatusMessage(peer *TCPPeer) error {
 		getStatusMsg = new(GetStatusMessage)
 		buf          = new(bytes.Buffer)
 	)
-	if err := gob.NewEncoder(buf).Encode(getStatusMsg); err != nil {
+	if err := json.NewEncoder(buf).Encode(getStatusMsg); err != nil {
 		return err
 	}
 	msg := NewMessage(MessageTypeGetStatus, buf.Bytes())
@@ -427,7 +427,7 @@ func (s *Server) processGetStatusMessage(from net.Addr, data *GetStatusMessage) 
 	}
 
 	buf := new(bytes.Buffer)
-	if err := gob.NewEncoder(buf).Encode(statusMessage); err != nil {
+	if err := json.NewEncoder(buf).Encode(statusMessage); err != nil {
 		return err
 	}
 
@@ -461,7 +461,7 @@ func (s *Server) requestBlocksLoop(peer net.Addr) error {
 		}
 
 		buf := new(bytes.Buffer)
-		if err := gob.NewEncoder(buf).Encode(getBlocksMessage); err != nil {
+		if err := json.NewEncoder(buf).Encode(getBlocksMessage); err != nil {
 			return err
 		}
 
