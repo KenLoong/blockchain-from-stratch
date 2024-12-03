@@ -54,5 +54,22 @@ func TestTxEncodeDecode(t *testing.T) {
 	txDecoded := new(Transaction)
 	assert.Nil(t, txDecoded.Decode(NewJSONTxDecoder(buf)))
 	assert.Equal(t, tx, txDecoded)
+}
 
+func TestNFTTX(t *testing.T) {
+	collectionTx := CollectionTx{
+		Fee:      200,
+		MetaData: []byte("The beginning of a new collection"),
+	}
+	privKey := crypto.GeneratePrivateKey()
+	tx := &Transaction{
+		Type:    TxTypeCollection,
+		TxInner: collectionTx,
+	}
+	tx.Sign(privKey)
+	buf := new(bytes.Buffer)
+	assert.Nil(t, tx.Encode(NewJSONTxEncoder(buf)))
+	txDecoded := &Transaction{}
+	assert.Nil(t, txDecoded.Decode(NewJSONTxDecoder(buf)))
+	assert.Equal(t, tx, txDecoded)
 }

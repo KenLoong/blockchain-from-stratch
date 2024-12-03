@@ -9,26 +9,31 @@ import (
 )
 
 type Blockchain struct {
-	logger     log.Logger
-	store      Storage
-	lock       sync.RWMutex
-	headers    []*Header
-	blocks     []*Block
-	txStore    map[types.Hash]*Transaction
-	blockStore map[types.Hash]*Block
-	validator  Validator
+	logger          log.Logger
+	store           Storage
+	lock            sync.RWMutex
+	headers         []*Header
+	blocks          []*Block
+	txStore         map[types.Hash]*Transaction
+	blockStore      map[types.Hash]*Block
+	validator       Validator
+	stateLock       sync.RWMutex
+	collectionState map[types.Hash]*CollectionTx
+	mintState       map[types.Hash]*MintTx
 	// TODO: make this an interface.
 	contractState *State
 }
 
 func NewBlockchain(l log.Logger, genesis *Block) (*Blockchain, error) {
 	bc := &Blockchain{
-		contractState: NewState(),
-		headers:       []*Header{},
-		store:         NewMemoryStorage(),
-		logger:        l,
-		blockStore:    make(map[types.Hash]*Block),
-		txStore:       make(map[types.Hash]*Transaction),
+		contractState:   NewState(),
+		headers:         []*Header{},
+		store:           NewMemoryStorage(),
+		logger:          l,
+		collectionState: make(map[types.Hash]*CollectionTx),
+		mintState:       make(map[types.Hash]*MintTx),
+		blockStore:      make(map[types.Hash]*Block),
+		txStore:         make(map[types.Hash]*Transaction),
 	}
 	bc.validator = NewBlockValidator(bc)
 	err := bc.addBlockWithoutValidation(genesis)
@@ -45,15 +50,36 @@ func (bc *Blockchain) AddBlock(b *Block) error {
 		return err
 	}
 
-	for _, tx := range b.Transactions {
-		bc.logger.Log("msg", "executing code", "len", len(tx.Data), "hash", tx.Hash(&TxHasher{}))
+	bc.stateLock.Lock()
+	defer bc.stateLock.Unlock()
 
-		vm := NewVM(tx.Data, bc.contractState)
-		if err := vm.Run(); err != nil {
-			return err
+	for _, tx := range b.Transactions {
+		// If we have data inside execute that data on the VM.
+		if len(tx.Data) > 0 {
+			bc.logger.Log("msg", "executing code", "len", len(tx.Data), "hash", tx.Hash(&TxHasher{}))
+			vm := NewVM(tx.Data, bc.contractState)
+			if err := vm.Run(); err != nil {
+				return err
+			}
 		}
 
-		//	fmt.Printf("state => %+v\n", bc.contractState.data)
+		hash := tx.Hash(TxHasher{})
+		switch t := tx.TxInner.(type) {
+		case CollectionTx:
+			bc.collectionState[hash] = &t
+			bc.logger.Log("msg", "created new NFT collection", "hash", hash)
+		case MintTx:
+			_, ok := bc.collectionState[t.Collection]
+			if !ok {
+				return fmt.Errorf("collection (%s) does not exist on the blockchain", t.Collection)
+			}
+			bc.mintState[hash] = &t
+
+			bc.logger.Log("msg", "created new NFT mint", "NFT", t.NFT, "collection", t.Collection)
+		default:
+			fmt.Printf("unsupported tx type %v", t)
+		}
+
 	}
 
 	return bc.addBlockWithoutValidation(b)

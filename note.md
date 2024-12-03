@@ -37,3 +37,10 @@
 
 - 实现 http 发送 tx
 - 目前只有 validator server 才会清理 mempool,其它 server 的 mempool 只会不断膨胀
+
+# EP24
+
+- 实现两种类型 tx 的执行
+- 将 gob 换成 json，gob 太多问题了，很复杂
+- 现在 late_node 无法同步了，出现 failed to decode message
+- Transaction 需要自定义 json 编解码，不知道为何会这么复杂，烦
