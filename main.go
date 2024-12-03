@@ -3,7 +3,7 @@ package main
 import (
 	"bytes"
 	"log"
-	"net"
+	"net/http"
 	"time"
 	"warson-blockchain/core"
 	"warson-blockchain/crypto"
@@ -28,7 +28,14 @@ func main() {
 		go lateNode.Start()
 	}()
 	time.Sleep(1 * time.Second)
-	txSender()
+
+	go func() {
+		txSendTicker := time.NewTicker(2 * time.Second)
+		for {
+			txSender()
+			<-txSendTicker.C
+		}
+	}()
 
 	select {}
 }
@@ -57,24 +64,23 @@ func makeServer(
 }
 
 func txSender() {
-	conn, err := net.Dial("tcp", ":3000")
-	if err != nil {
-		panic(err)
-	}
-
 	privKey := crypto.GeneratePrivateKey()
-	// data := []byte{0x03, 0x0a, 0x02, 0x0a, 0x0e}
 	data := []byte{0x03, 0x0a, 0x46, 0x0c, 0x4f, 0x0c, 0x4f, 0x0c, 0x0d, 0x05, 0x0a, 0x0f}
 	tx := core.NewTransaction(data)
 	tx.Sign(privKey)
+
 	buf := &bytes.Buffer{}
 	if err := tx.Encode(core.NewGobTxEncoder(buf)); err != nil {
 		panic(err)
 	}
 
-	msg := network.NewMessage(network.MessageTypeTx, buf.Bytes())
+	req, err := http.NewRequest("POST", "http://localhost:9000/tx", buf)
+	if err != nil {
+		panic(err)
+	}
 
-	_, err = conn.Write(msg.Bytes())
+	client := http.Client{}
+	_, err = client.Do(req)
 	if err != nil {
 		panic(err)
 	}

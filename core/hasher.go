@@ -2,6 +2,7 @@ package core
 
 import (
 	"crypto/sha256"
+	"encoding/binary"
 	"warson-blockchain/types"
 )
 
@@ -20,5 +21,8 @@ type TxHasher struct {
 }
 
 func (th TxHasher) Hash(tx *Transaction) types.Hash {
-	return types.Hash(sha256.Sum256(tx.Data))
+	buf := make([]byte, 8)
+	binary.LittleEndian.PutUint64(buf, uint64(tx.Nonce))
+	data := append(buf, tx.Data...)
+	return types.Hash(sha256.Sum256(data))
 }

@@ -41,6 +41,7 @@ type Server struct {
 	chain       *core.Blockchain
 	isValidator bool
 	rpcCh       chan RPC
+	txChan      chan *core.Transaction
 	quitCh      chan struct{}
 }
 
@@ -61,13 +62,17 @@ func NewServer(opts ServerOpts) (*Server, error) {
 		return nil, err
 	}
 
+	// Channel being used to communicate between the JSON RPC server
+	// and the node that will process this message.
+	txChan := make(chan *core.Transaction)
+
 	// Only boot up the API server if the config has a valid port number.
 	if len(opts.APIListenAddr) > 0 {
 		apiServerCfg := api.ServerConfig{
 			Logger:     opts.Logger,
 			ListenAddr: opts.APIListenAddr,
 		}
-		apiServer := api.NewServer(apiServerCfg, chain)
+		apiServer := api.NewServer(apiServerCfg, chain, txChan)
 		go apiServer.Start()
 		opts.Logger.Log("msg", "JSON API server running", "port", opts.APIListenAddr)
 	}
@@ -84,6 +89,7 @@ func NewServer(opts ServerOpts) (*Server, error) {
 		mempool:      NewTxPool(1000),
 		isValidator:  opts.PrivateKey != nil,
 		rpcCh:        make(chan RPC),
+		txChan:       txChan,
 		quitCh:       make(chan struct{}, 1),
 	}
 
@@ -156,10 +162,14 @@ free:
 
 			if err := s.RPCProcessor.ProcessMessage(msg); err != nil {
 				if err != core.ErrBlockKnown {
-					s.Logger.Log("error", err)
+					s.Logger.Log("RPC ERROR", err)
 				}
 			}
 
+		case tx := <-s.txChan:
+			if err := s.processTransaction(tx); err != nil {
+				s.Logger.Log("process TX error", err)
+			}
 		case <-s.quitCh:
 			break free
 		}

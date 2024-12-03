@@ -2,6 +2,7 @@ package core
 
 import (
 	"fmt"
+	"math/rand"
 	"warson-blockchain/crypto"
 	"warson-blockchain/types"
 )
@@ -11,6 +12,7 @@ type Transaction struct {
 
 	From      crypto.PublicKey
 	Signature *crypto.Signature
+	Nonce     int64
 
 	// cached version of the tx data hash
 	hash types.Hash
@@ -18,7 +20,8 @@ type Transaction struct {
 
 func NewTransaction(data []byte) *Transaction {
 	return &Transaction{
-		Data: data,
+		Data:  data,
+		Nonce: rand.Int63n(10000000000000),
 	}
 }
 

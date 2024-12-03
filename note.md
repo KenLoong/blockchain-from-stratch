@@ -32,3 +32,8 @@
 
 - 使用 echo 框架来写了两个 http api 接口
 - 项目运行时间较长时，会出现这个错误：peer send error => addr 127.0.0.1:59723 [err: write tcp 127.0.0.1:3000->127.0.0.1:59723: write: broken pipe]
+
+# EP23
+
+- 实现 http 发送 tx
+- 目前只有 validator server 才会清理 mempool,其它 server 的 mempool 只会不断膨胀
