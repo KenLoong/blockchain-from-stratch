@@ -6,6 +6,7 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"crypto/x509"
+	"encoding/hex"
 	"fmt"
 	"math/big"
 	"warson-blockchain/types"
@@ -99,6 +100,11 @@ func (p PublicKey) Address() types.Address {
 
 type Signature struct {
 	R, S *big.Int
+}
+
+func (sig Signature) String() string {
+	b := append(sig.S.Bytes(), sig.R.Bytes()...)
+	return hex.EncodeToString(b)
 }
 
 func (s Signature) Verify(publicKey PublicKey, data []byte) bool {

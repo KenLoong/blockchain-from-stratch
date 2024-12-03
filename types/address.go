@@ -1,6 +1,7 @@
 package types
 
 import (
+	"encoding/hex"
 	"fmt"
 )
 
@@ -25,4 +26,8 @@ func AddressFromBytes(b []byte) Address {
 		value[i] = b[i]
 	}
 	return Address(value)
+}
+
+func (a Address) String() string {
+	return hex.EncodeToString(a.ToSlice())
 }

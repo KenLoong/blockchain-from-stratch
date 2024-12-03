@@ -27,3 +27,8 @@
 - sendGetStatusMessage 这个函数还是调用一次，但是在处理 GetStatusMessage 时，会开启定时调用 requestBlocksLoop 的逻辑，不停地请求 blocks，也算是不断同步了
 - 作者依然没有处理 ErrBlockKnown 的同步问题，但是将 return 改成 continue 了
 - 作者修改了 public key 的定义，但是我的实现应该也没有问题，就不跟作者改了
+
+# EP22
+
+- 使用 echo 框架来写了两个 http api 接口
+- 项目运行时间较长时，会出现这个错误：peer send error => addr 127.0.0.1:59723 [err: write tcp 127.0.0.1:3000->127.0.0.1:59723: write: broken pipe]

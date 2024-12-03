@@ -8,6 +8,7 @@ import (
 	"os"
 	"sync"
 	"time"
+	"warson-blockchain/api"
 	"warson-blockchain/core"
 	"warson-blockchain/crypto"
 	"warson-blockchain/types"
@@ -20,6 +21,7 @@ var defaultBlockTime = 5 * time.Second
 type ServerOpts struct {
 	SeedNodes     []string
 	ListenAddr    string
+	APIListenAddr string // http port
 	TCPTransport  *TCPTransport
 	ID            string
 	Logger        log.Logger
@@ -57,6 +59,17 @@ func NewServer(opts ServerOpts) (*Server, error) {
 	chain, err := core.NewBlockchain(opts.Logger, genesisBlock())
 	if err != nil {
 		return nil, err
+	}
+
+	// Only boot up the API server if the config has a valid port number.
+	if len(opts.APIListenAddr) > 0 {
+		apiServerCfg := api.ServerConfig{
+			Logger:     opts.Logger,
+			ListenAddr: opts.APIListenAddr,
+		}
+		apiServer := api.NewServer(apiServerCfg, chain)
+		go apiServer.Start()
+		opts.Logger.Log("msg", "JSON API server running", "port", opts.APIListenAddr)
 	}
 
 	peerCh := make(chan *TCPPeer)
@@ -219,11 +232,11 @@ func (s *Server) processTransaction(tx *core.Transaction) error {
 		return err
 	}
 
-	// s.Logger.Log(
-	// 	"msg", "adding new tx to mempool",
-	// 	"hash", hash,
-	// 	"mempoolPending", s.mempool.PendingCount(),
-	// )
+	s.Logger.Log(
+		"msg", "adding new tx to mempool",
+		"hash", hash,
+		"mempoolPending", s.mempool.PendingCount(),
+	)
 
 	go s.broadcastTx(tx)
 
