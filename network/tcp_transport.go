@@ -3,6 +3,7 @@ package network
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"net"
 )
 
@@ -18,9 +19,12 @@ func (p *TCPPeer) Send(b []byte) error {
 }
 
 func (p *TCPPeer) readLoop(rpcCh chan RPC) {
-	buf := make([]byte, 2048)
+	buf := make([]byte, 4096)
 	for {
 		n, err := p.conn.Read(buf)
+		if err == io.EOF {
+			continue
+		}
 		if err != nil {
 			fmt.Printf("read error: %s", err)
 			continue
