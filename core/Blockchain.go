@@ -33,7 +33,6 @@ func NewBlockchain(l log.Logger, genesis *Block) (*Blockchain, error) {
 	accountState := NewAccountState()
 
 	coinbase := crypto.PublicKey{}
-	fmt.Println(coinbase.Address())
 	accountState.CreateAccount(coinbase.Address())
 
 	bc := &Blockchain{
@@ -101,13 +100,7 @@ func (bc *Blockchain) Height() uint32 {
 func (bc *Blockchain) addBlockWithoutValidation(b *Block) error {
 
 	// fix dead lock
-	if err := bc.exexTxx(b.Transactions); err != nil {
-		return err
-	}
-
-	fmt.Println("========ACCOUNT STATE==============")
-	fmt.Printf("%+v\n", bc.accountState.accounts)
-	fmt.Println("========ACCOUNT STATE==============")
+	bc.execTransaction(b.Transactions)
 
 	bc.lock.Lock()
 	bc.headers = append(bc.headers, b.Header)
@@ -130,7 +123,7 @@ func (bc *Blockchain) addBlockWithoutValidation(b *Block) error {
 	return bc.store.Put(b)
 }
 
-func (bc *Blockchain) exexTxx(txx []*Transaction) error {
+func (bc *Blockchain) execTransaction(txx []*Transaction) {
 	bc.stateLock.Lock()
 	defer bc.stateLock.Unlock()
 	for _, tx := range txx {
@@ -140,7 +133,11 @@ func (bc *Blockchain) exexTxx(txx []*Transaction) error {
 
 			vm := NewVM(tx.Data, bc.contractState)
 			if err := vm.Run(); err != nil {
-				return err
+				bc.logger.Log(
+					"msg", "vm run failed",
+					"len", len(tx.Data),
+					"tx-hash", tx.Hash(&TxHasher{}),
+					"err", err.Error())
 			}
 		}
 
@@ -148,18 +145,25 @@ func (bc *Blockchain) exexTxx(txx []*Transaction) error {
 		// the native NFT implemtation.
 		if tx.TxInner != nil {
 			if err := bc.handleNativeNFT(tx); err != nil {
-				return err
+				bc.logger.Log(
+					"msg", "handleNativeNFT failed",
+					"len", len(tx.Data),
+					"tx-hash", tx.Hash(&TxHasher{}),
+					"err", err.Error())
 			}
 		}
 
 		// Handle the native transaction here
 		if tx.Value > 0 {
 			if err := bc.handleNativeTransfer(tx); err != nil {
-				return err
+				bc.logger.Log(
+					"msg", "handleNativeTransfer failed",
+					"len", len(tx.Data),
+					"tx-hash", tx.Hash(&TxHasher{}),
+					"err", err.Error())
 			}
 		}
 	}
-	return nil
 }
 
 func (bc *Blockchain) GetBlockByHash(hash types.Hash) (*Block, error) {

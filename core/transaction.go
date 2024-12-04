@@ -39,7 +39,7 @@ type Transaction struct {
 	From      crypto.PublicKey
 	Signature *crypto.Signature `json:"signature,omitempty"`
 	Nonce     int64
-	hash      types.Hash // cached version of the tx data hash
+	TXHash    types.Hash // cached version of the tx data hash
 }
 
 // NewTransaction creates a new transaction with random nonce
@@ -106,12 +106,14 @@ func (tx *Transaction) UnmarshalJSON(data []byte) error {
 
 // Sign signs the transaction with the private key
 func (tx *Transaction) Sign(privateKey crypto.PrivateKey) error {
-	sig, err := privateKey.Sign(tx.Data)
+	// 会被计算在hash的字段，必须在hash前就赋值，不能hash完后再赋值，不然前后hash的值都不一样
+	tx.From = privateKey.PublicKey()
+	hash := tx.Hash(TxHasher{})
+	sig, err := privateKey.Sign(hash.ToSlice())
 	if err != nil {
 		return err
 	}
 
-	tx.From = privateKey.PublicKey()
 	tx.Signature = sig
 
 	return nil
@@ -123,7 +125,8 @@ func (tx *Transaction) Verify() error {
 		return fmt.Errorf("transaction has no signature")
 	}
 
-	if !tx.Signature.Verify(tx.From, tx.Data) {
+	hash := tx.Hash(TxHasher{})
+	if !tx.Signature.Verify(tx.From, hash.ToSlice()) {
 		return fmt.Errorf("invalid transaction signature")
 	}
 	return nil
@@ -138,9 +141,10 @@ func (tx *Transaction) Encode(dec Encoder[*Transaction]) error {
 }
 
 // Hash calculates the hash of the transaction
+// todo:这里其实不是很严谨，应该明确在sign的时候，才会去赋值tx.TXHash
 func (tx *Transaction) Hash(hasher Hasher[*Transaction]) types.Hash {
-	if tx.hash.IsZero() {
-		tx.hash = hasher.Hash(tx)
+	if tx.TXHash.IsZero() {
+		tx.TXHash = hasher.Hash(tx)
 	}
-	return tx.hash
+	return hasher.Hash(tx)
 }

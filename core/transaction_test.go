@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"testing"
 	"warson-blockchain/crypto"
+	"warson-blockchain/types"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -26,7 +27,7 @@ func TestVerifyTransaction(t *testing.T) {
 
 	assert.Nil(t, tx.Sign(privateKey))
 	assert.Nil(t, tx.Verify())
-	tx.Data = []byte("fejadjijf")
+	tx.Data = []byte("foo-foo!!!")
 	assert.NotNil(t, tx.Verify())
 	tx.Data = []byte("foo")
 	assert.Nil(t, tx.Verify())
@@ -81,4 +82,18 @@ func TestNativeTransferTransaction(t *testing.T) {
 		Value: 666,
 	}
 	assert.Nil(t, tx.Sign(fromPrivKey))
+}
+
+func TestVerifyTransactionWithTamper(t *testing.T) {
+	tx := NewTransaction(nil)
+	fromPrivKey := crypto.GeneratePrivateKey()
+	toPrivKey := crypto.GeneratePrivateKey()
+	hackerPrivKey := crypto.GeneratePrivateKey()
+	tx.From = fromPrivKey.PublicKey()
+	tx.To = toPrivKey.PublicKey()
+	tx.Value = 666
+	assert.Nil(t, tx.Sign(fromPrivKey))
+	tx.TXHash = types.Hash{}
+	tx.To = hackerPrivKey.PublicKey()
+	assert.NotNil(t, tx.Verify())
 }
