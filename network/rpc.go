@@ -28,8 +28,8 @@ type RPC struct {
 }
 
 type Message struct {
-	Header MessageType
-	Data   []byte
+	Header MessageType `json:"header"`
+	Data   []byte      `json:"data"`
 }
 
 func NewMessage(t MessageType, data []byte) *Message {
@@ -55,6 +55,7 @@ type DecodedMessage struct {
 type RPCDecodeFunc func(RPC) (*DecodedMessage, error)
 
 func DefaultRPCDecodeFunc(rpc RPC) (*DecodedMessage, error) {
+
 	msg := Message{}
 	if err := json.NewDecoder(rpc.Payload).Decode(&msg); err != nil {
 		return nil, fmt.Errorf("failed to decode message from %s: %s", rpc.From, err)

@@ -21,8 +21,10 @@ func main() {
 	remoteNode := makeServer("REMOTE_NODE_4000", nil, ":4000", []string{":4001"}, "")
 	go remoteNode.Start()
 
-	remoteNodeB := makeServer("REMOTE_NODE_B_4001", nil, ":4001", nil, "")
-	go remoteNodeB.Start()
+	/*
+		remoteNodeB := makeServer("REMOTE_NODE_B_4001", nil, ":4001", nil, "")
+		go remoteNodeB.Start()
+	*/
 
 	go func() {
 		time.Sleep(11 * time.Second)

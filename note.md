@@ -44,3 +44,7 @@
 - 将 gob 换成 json，gob 太多问题了，很复杂
 - 现在 late_node 无法同步了，出现 failed to decode message
 - Transaction 需要自定义 json 编解码，不知道为何会这么复杂，烦
+
+# fix
+
+- 解决了 failed to decode message 的问题，原因是 TCP 读取消息时的 buf 直接写成 4096，导致消息大于 4096 时，被截断，然后 json 解码失败

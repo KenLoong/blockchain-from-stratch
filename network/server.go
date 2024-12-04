@@ -156,7 +156,7 @@ free:
 		case rpc := <-s.rpcCh:
 			msg, err := s.RPCDecodeFunc(rpc)
 			if err != nil {
-				s.Logger.Log("error", err)
+				s.Logger.Log("RPCDecodeFunc", err)
 				continue
 			}
 
@@ -355,6 +355,8 @@ func (s *Server) processGetBlocksMessage(from net.Addr, data *GetBlocksMessage) 
 
 	s.mu.RLock()
 	defer s.mu.RUnlock()
+
+	s.Logger.Log("send_blocks_length", len(buf.Bytes()))
 
 	msg := NewMessage(MessageTypeBlocks, buf.Bytes())
 	peer, ok := s.peerMap[from]

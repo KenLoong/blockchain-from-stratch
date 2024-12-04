@@ -17,5 +17,5 @@ type GetBlocksMessage struct {
 }
 
 type BlocksMessage struct {
-	Blocks []*core.Block
+	Blocks []*core.Block `json:"blocks,omitempty"`
 }

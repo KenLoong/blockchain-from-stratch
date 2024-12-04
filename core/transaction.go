@@ -32,9 +32,9 @@ type MintTx struct {
 type Transaction struct {
 	Data      []byte
 	Type      TxType
-	TxInner   any
+	TxInner   any `json:"tx_inner,omitempty"`
 	From      crypto.PublicKey
-	Signature *crypto.Signature
+	Signature *crypto.Signature `json:"signature,omitempty"`
 	Nonce     int64
 	hash      types.Hash // cached version of the tx data hash
 }
