@@ -56,3 +56,7 @@
 # EP26
 
 - 博主的 addBlockWithoutValidation 函数有死锁漏洞，我改成 execTransactions 来避免死锁了
+
+# EP27
+
+- 博主的单测有问题，block 在加完 tx 后，没有 sign 竟然也能成功放进 blockchain，有问题,但我的代码版本可以保证必须 sign 才能放进 blockchain
