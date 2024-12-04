@@ -57,12 +57,7 @@ func NewServer(opts ServerOpts) (*Server, error) {
 		opts.Logger = log.With(opts.Logger, "addr", opts.ID)
 	}
 
-	accountState := core.NewAccountState()
-	if opts.PrivateKey != nil {
-		accountState.AddBalance(opts.PrivateKey.PublicKey().Address(), 1000000)
-		fmt.Printf("Server Address is %s\n", opts.PrivateKey.PublicKey().Address())
-	}
-	chain, err := core.NewBlockchain(opts.Logger, genesisBlock(), accountState)
+	chain, err := core.NewBlockchain(opts.Logger, genesisBlock())
 	if err != nil {
 		return nil, err
 	}
@@ -189,8 +184,11 @@ func (s *Server) validatorLoop() {
 	s.Logger.Log("msg", "Starting validator loop", "blockTime", s.BlockTime)
 
 	for {
+		fmt.Println("creating new block")
+		if err := s.createNewBlock(); err != nil {
+			s.Logger.Log("create block error", err)
+		}
 		<-ticker.C
-		s.createNewBlock()
 	}
 }
 
@@ -228,6 +226,7 @@ func (s *Server) broadcast(payload []byte) error {
 
 func (s *Server) processBlock(b *core.Block) error {
 	if err := s.chain.AddBlock(b); err != nil {
+		s.Logger.Log("error", err.Error())
 		return err
 	}
 
@@ -304,6 +303,7 @@ func (s *Server) createNewBlock() error {
 	}
 
 	if err := s.chain.AddBlock(block); err != nil {
+		s.Logger.Log("error", err.Error())
 		return err
 	}
 
@@ -323,6 +323,13 @@ func genesisBlock() *core.Block {
 	}
 
 	b, _ := core.NewBlock(header, nil)
+	coinbase := crypto.PublicKey{}
+	tx := core.NewTransaction(nil)
+	tx.From = coinbase
+	tx.To = coinbase
+	tx.Value = 10_000_000
+	b.Transactions = append(b.Transactions, tx)
+
 	privKey := crypto.GeneratePrivateKey()
 	if err := b.Sign(privKey); err != nil {
 		panic(err)

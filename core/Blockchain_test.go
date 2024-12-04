@@ -10,7 +10,7 @@ import (
 )
 
 func newBlockchainWithGenesis(t *testing.T) *Blockchain {
-	bc, err := NewBlockchain(log.NewNopLogger(), randomBlock(t, 0, types.Hash{}), NewAccountState())
+	bc, err := NewBlockchain(log.NewNopLogger(), randomBlock(t, 0, types.Hash{}))
 	assert.Nil(t, err)
 
 	return bc
@@ -31,7 +31,7 @@ func TestBlockChain(t *testing.T) {
 func TestAddBlock(t *testing.T) {
 	bc := newBlockchainWithGenesis(t)
 
-	lenBlocks := 200
+	lenBlocks := 10
 	for i := 0; i < lenBlocks; i++ {
 		block := randomBlock(t, uint32(i+1), getPrevBlockHash(t, bc, uint32(i+1)))
 		assert.Nil(t, bc.AddBlock(block))

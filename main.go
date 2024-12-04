@@ -49,9 +49,11 @@ func main() {
 		}()
 	*/
 
-	if err := sendTransaction(validatorPrivKey); err != nil {
-		panic(err)
-	}
+	/*
+		if err := sendTransaction(validatorPrivKey); err != nil {
+			panic(err)
+		}
+	*/
 
 	select {}
 }

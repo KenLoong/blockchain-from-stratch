@@ -52,3 +52,7 @@
 # EP25
 
 - 实现基本的账户转账，但是因为 blockchain 实体的 accountState 变量没有在各节点同步，所以只有 LOCAL_NODE_3000 节点能够成功执行 transfer 的交易（LOCAL_NODE_3000 节点初始化时，在 accountState 里放进了自己的 address），其它节点都会失败，出现 address (28621e74135fac8140a7ca4c5d9da32aeba442de) unknown"的失败
+
+# EP26
+
+- 博主的 addBlockWithoutValidation 函数有死锁漏洞，我改成 execTransactions 来避免死锁了
