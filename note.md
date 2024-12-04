@@ -64,3 +64,6 @@
 # EP28
 
 - 博主的代码版本时 block 的 transaction 如果执行失败，就是剔除这个交易（这个 block 就没有这个交易了）,但是这会引申出一个问题，那就是剔除后，这个 block 的签名就会跟数据不一致了，所以不能剔除交易，因为区块链就是一切都不能修改的，执行失败那就执行失败吧，但数据要保留,所以我的版本是不删除交易数据
+- 修复很多 bug：例如 tx 的 sign 逻辑，因为 hash 会把 from 也算进去，所以必须在计算 hash 之前就赋值 from 字段，例如 func (tx \*Transaction) Hash 的函数逻辑也有 bug，如果非 zero，就直接返回 cached version 的 hash，那岂不是数据被篡改后 verify 的时候也是用的旧的 hash 吗！根本就没去算据被篡改后的 hash，起不到验证作用！！！
+
+TODO:修复博主的各种 bug！！！
