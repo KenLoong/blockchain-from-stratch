@@ -35,17 +35,23 @@ func main() {
 
 	time.Sleep(1 * time.Second)
 
-	collectionOwnerPrivKey := crypto.GeneratePrivateKey()
-	collectionHash := createCollectionTx(collectionOwnerPrivKey)
+	/*
+		collectionOwnerPrivKey := crypto.GeneratePrivateKey()
+		collectionHash := createCollectionTx(collectionOwnerPrivKey)
 
-	txSendTicker := time.NewTicker(1 * time.Second)
-	go func() {
-		for i := 0; i < 20; i++ {
-			nftMinter(collectionOwnerPrivKey, collectionHash)
+		txSendTicker := time.NewTicker(1 * time.Second)
+		go func() {
+			for i := 0; i < 20; i++ {
+				nftMinter(collectionOwnerPrivKey, collectionHash)
 
-			<-txSendTicker.C
-		}
-	}()
+				<-txSendTicker.C
+			}
+		}()
+	*/
+
+	if err := sendTransaction(validatorPrivKey); err != nil {
+		panic(err)
+	}
 
 	select {}
 }
@@ -132,4 +138,27 @@ func nftMinter(privKey crypto.PrivateKey, collection types.Hash) {
 	if err != nil {
 		panic(err)
 	}
+}
+
+// 测试account的交易
+func sendTransaction(privKey crypto.PrivateKey) error {
+	toPrivKey := crypto.GeneratePrivateKey()
+	tx := core.NewTransaction(nil)
+	tx.To = toPrivKey.PublicKey()
+	tx.Value = 666
+	if err := tx.Sign(privKey); err != nil {
+		return err
+	}
+
+	buf := &bytes.Buffer{}
+	if err := tx.Encode(core.NewJSONTxEncoder(buf)); err != nil {
+		panic(err)
+	}
+	req, err := http.NewRequest("POST", "http://localhost:9000/tx", buf)
+	if err != nil {
+		panic(err)
+	}
+	client := http.Client{}
+	_, err = client.Do(req)
+	return err
 }

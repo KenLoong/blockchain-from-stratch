@@ -48,3 +48,7 @@
 # fix
 
 - 解决了 failed to decode message 的问题，原因是 TCP 读取消息时的 buf 直接写成 4096，导致消息大于 4096 时，被截断，然后 json 解码失败
+
+# EP25
+
+- 实现基本的账户转账，但是因为 blockchain 实体的 accountState 变量没有在各节点同步，所以只有 LOCAL_NODE_3000 节点能够成功执行 transfer 的交易（LOCAL_NODE_3000 节点初始化时，在 accountState 里放进了自己的 address），其它节点都会失败，出现 address (28621e74135fac8140a7ca4c5d9da32aeba442de) unknown"的失败

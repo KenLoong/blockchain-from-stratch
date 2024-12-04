@@ -57,7 +57,12 @@ func NewServer(opts ServerOpts) (*Server, error) {
 		opts.Logger = log.With(opts.Logger, "addr", opts.ID)
 	}
 
-	chain, err := core.NewBlockchain(opts.Logger, genesisBlock())
+	accountState := core.NewAccountState()
+	if opts.PrivateKey != nil {
+		accountState.AddBalance(opts.PrivateKey.PublicKey().Address(), 1000000)
+		fmt.Printf("Server Address is %s\n", opts.PrivateKey.PublicKey().Address())
+	}
+	chain, err := core.NewBlockchain(opts.Logger, genesisBlock(), accountState)
 	if err != nil {
 		return nil, err
 	}
@@ -162,7 +167,7 @@ free:
 
 			if err := s.RPCProcessor.ProcessMessage(msg); err != nil {
 				if err != core.ErrBlockKnown {
-					s.Logger.Log("RPC ERROR", err)
+					s.Logger.Log("RPC_ERROR", err)
 				}
 			}
 
@@ -401,7 +406,7 @@ func (s *Server) processBlocksMessage(from net.Addr, data *BlocksMessage) error 
 				"detais", fmt.Sprintf("%+v", err),
 				"blockhash", block.Hash(core.BlockHasher{}),
 			)
-			continue
+			return err
 		}
 	}
 
